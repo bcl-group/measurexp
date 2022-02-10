@@ -5,7 +5,7 @@ plt.rcParams["font.family"] = "IPAexGothic"
 
 class MuscleSynergy:
     """
-    筋シナジーを扱うのクラス
+    筋シナジーを扱うクラス
 
     Examples
     --------
