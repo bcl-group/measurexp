@@ -45,15 +45,15 @@ class EMG:
         rms = np.sqrt(np.convolve(a=emp2, v=v, mode='same'))
         return rms
 
-    def _col_rms(self, muscle: str, period: float):
+    def _col_rms(self, muscle: str, period: float, n: int = 5, Wn: int = 50):
         em = self.data.loc[:, muscle].values.copy()
         em[:] -= em.mean()
-        b, a = signal.butter(5, 50 / self.fs * 2, btype='low')
+        b, a = signal.butter(n, Wn / self.fs * 2, btype='low')
         em[:] = signal.filtfilt(b, a, em)
         rms = self._window_rms(em, self.fs, period)
         return rms
 
-    def prep(self, period: float = 0.5):
+    def prep(self, period: float = 0.5, n: int = 5, Wn: int = 50):
         self.rms = pd.DataFrame(index=self.data.index)
         for muscle in self.data.columns[::-1]:
-            self.rms.insert(0, muscle, self._col_rms(muscle, period=period))
+            self.rms.insert(0, muscle, self._col_rms(muscle, period=period, n=n, Wn=Wn))
