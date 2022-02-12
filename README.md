@@ -1,6 +1,7 @@
 # measurexp (Measurement experiments)
 Python 用 運動解析ライブラリー
 
+- [筋電筋解析](EMG.md)
 - [筋シナジー解析](muscle_synergy.md)
 
 ## Development
