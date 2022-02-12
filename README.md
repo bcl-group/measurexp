@@ -1,4 +1,6 @@
 # measurexp (Measurement experiments)
+[![Python Package using Conda](https://github.com/bcl-group/measurexp/actions/workflows/python-package-conda.yml/badge.svg?branch=master)](https://github.com/bcl-group/measurexp/actions/workflows/python-package-conda.yml)
+
 Python 用 運動解析ライブラリー
 
 - [筋電筋解析](EMG.md)
