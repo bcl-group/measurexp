@@ -2,6 +2,7 @@ import re
 import pandas as pd
 import numpy as np
 from scipy import signal
+from sklearn import decomposition
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "IPAexGothic"
 
@@ -15,6 +16,8 @@ class EMG:
         self.data: pd.DataFrame = None
         # サンプリング周波数
         self.fs: float = None
+        self.H: pd.DataFrame = None
+        self.W: pd.DataFrame = None
 
     def _col2muscles_name(self, col_muscle: str):
         match = re.match(r'^(.+):', col_muscle)
@@ -56,4 +59,51 @@ class EMG:
     def prep(self, period: float = 0.5, n: int = 5, Wn: int = 50):
         self.rms = pd.DataFrame(index=self.data.index)
         for muscle in self.data.columns[::-1]:
-            self.rms.insert(0, muscle, self._col_rms(muscle, period=period, n=n, Wn=Wn))
+            self.rms.insert(
+                0,
+                muscle,
+                self._col_rms(muscle, period=period, n=n, Wn=Wn)
+            )
+
+    def _vaf(self, X: np.ndarray, W: np.ndarray, H: np.ndarray):
+        VAF = 1 - np.power(X - W.dot(H), 2).sum() / np.power(X, 2).sum()
+        return VAF
+
+    def _calc_synergy(self, X: np.ndarray):
+        VAFs = []
+        for n_components in range(1, X.shape[1]):
+            model = decomposition.NMF(
+                n_components=n_components,
+                init='nndsvda',
+                random_state=0,
+                tol=1e-1
+            )
+            W = model.fit_transform(X)
+            H = model.components_
+            VAFs.append(self._vaf(X, W, H))
+            if VAFs[-1] > 0.9:
+                break
+
+        return (VAFs, W, H)
+
+    def calc_synergy(self):
+        X = self.rms.values
+        self.VAFs, W, H = self._calc_synergy(X)
+        self.W = pd.DataFrame(
+            W,
+            columns=[f'筋シナジー {_+1}' for _ in range(W.shape[1])],
+            index=self.rms.index
+        )
+        self.H = pd.DataFrame(
+            H,
+            columns=self.rms.columns,
+            index=[f'筋シナジー {_+1}' for _ in range(W.shape[1])]
+        )
+        return [self.W, self.H]
+
+    def plot_synergy(self, **args):
+        fig, ax = plt.subplots()
+        self.W.plot(ax=ax, **args)
+        ax.yaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
+        ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        plt.show()
