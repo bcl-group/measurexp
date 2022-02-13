@@ -13,12 +13,14 @@ import matplotlib.pyplot as plt
 emg = EMG()
 
 # データ読み込み
-emg.read('03.csv')
+emg.read('EMG.csv')
 
 # 下処理
 emg.prep()
 
-# 筋活動のプロット
-emg.rms.plot()
-plt.show()
+# 筋シナジーの計算
+emg.calc_synergy()
+
+# 筋シナジーのプロット
+emg.plot_synergy()
 ```
