@@ -5,22 +5,23 @@ from sklearn import decomposition
 from sklearn._config import config_context
 from sklearn.decomposition._nmf \
     import _beta_divergence, \
-        _check_string_param, \
-        _check_init, \
-        _initialize_nmf, \
-        _compute_regularization
+    _check_string_param, \
+    _check_init, \
+    _initialize_nmf, \
+    _compute_regularization
 from sklearn.utils.validation \
     import check_array, \
-        check_non_negative, \
-        check_random_state
+    check_non_negative, \
+    check_random_state
 from scipy import sparse
-from scipy.sparse.base import issparse
-import warnings
+# from scipy.sparse.base import issparse
+# import warnings
 import numbers
 
 # from sklearn.decomposition._nmf import _initialize_nmf as init_NMF
 
 import cupy as cp
+
 
 def cupy_safe_sparse_dot(a, b, *, dense_output=False):
     if a.ndim > 2 or b.ndim > 2:
@@ -47,8 +48,9 @@ def cupy_safe_sparse_dot(a, b, *, dense_output=False):
         return ret.toarray()
     return ret
 
+
 def _cupy_update_coordinate_descent(X, W, Ht, l1_reg, l2_reg, shuffle,
-                               random_state):
+                                    random_state):
     n_components = Ht.shape[1]
 
     HHt = cp.dot(Ht.T, Ht)
@@ -68,11 +70,13 @@ def _cupy_update_coordinate_descent(X, W, Ht, l1_reg, l2_reg, shuffle,
         permutation = np.arange(n_components)
     # The following seems to be required on 64-bit Windows w/ Python 3.5.
     permutation = np.asarray(permutation, dtype=np.intp)
-    return _update_cdnmf_fast(W, HHt, XHt, permutation)
+    # return _update_cdnmf_fast(W, HHt, XHt, permutation)
+
 
 def _cupy_fit_coordinate_descent(X, W, H, tol=1e-4, max_iter=200, l1_reg_W=0,
-                            l1_reg_H=0, l2_reg_W=0, l2_reg_H=0, update_H=True,
-                            verbose=0, shuffle=False, random_state=None):
+                                 l1_reg_H=0, l2_reg_W=0, l2_reg_H=0,
+                                 update_H=True, verbose=0, shuffle=False,
+                                 random_state=None):
     Ht = check_array(H.T, order='C')
     X = check_array(X, accept_sparse='csr')
 
@@ -87,11 +91,12 @@ def _cupy_fit_coordinate_descent(X, W, H, tol=1e-4, max_iter=200, l1_reg_W=0,
 
         # Update W
         violation += _cupy_update_coordinate_descent(X, W, Ht, l1_reg_W,
-                                                l2_reg_W, shuffle, rng)
+                                                     l2_reg_W, shuffle, rng)
         # Update H
         if update_H:
-            violation += _update_coordinate_descent(X.T, Ht, W, l1_reg_H,
-                                                    l2_reg_H, shuffle, rng)
+            # violation += _update_coordinate_descent(X.T, Ht, W, l1_reg_H,
+            #                                         l2_reg_H, shuffle, rng)
+            pass
 
         if n_iter == 1:
             violation_init = violation
@@ -108,6 +113,7 @@ def _cupy_fit_coordinate_descent(X, W, H, tol=1e-4, max_iter=200, l1_reg_W=0,
             break
 
     return W, Ht.T, n_iter
+
 
 def cupy_non_negative_factorization(X, W=None, H=None, n_components=None, *,
                                     init='warn', update_H=True, solver='cd',
@@ -167,12 +173,12 @@ def cupy_non_negative_factorization(X, W=None, H=None, n_components=None, *,
 
     if solver == 'cd':
         W, H, n_iter = _cupy_fit_coordinate_descent(X, W, H, tol, max_iter,
-                                               l1_reg_W, l1_reg_H,
-                                               l2_reg_W, l2_reg_H,
-                                               update_H=update_H,
-                                               verbose=verbose,
-                                               shuffle=shuffle,
-                                               random_state=random_state)
+                                                    l1_reg_W, l1_reg_H,
+                                                    l2_reg_W, l2_reg_H,
+                                                    update_H=update_H,
+                                                    verbose=verbose,
+                                                    shuffle=shuffle,
+                                                    random_state=random_state)
     elif solver == 'mu':
         print('未実装 (solver == \'mu\')')
 
@@ -180,8 +186,10 @@ def cupy_non_negative_factorization(X, W=None, H=None, n_components=None, *,
         raise ValueError("Invalid solver parameter '%s'." % solver)
 
     if n_iter == max_iter and tol > 0:
-        warnings.warn("Maximum number of iterations %d reached. Increase it to"
-                      " improve convergence." % max_iter, ConvergenceWarning)
+        # warnings.warn("Maximum number of iterations %d reached."
+        #     "Increase it to"
+        #     " improve convergence." % max_iter, ConvergenceWarning)
+        pass
 
     return W, H, n_iter
 
