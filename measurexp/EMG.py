@@ -12,7 +12,48 @@ plt.rcParams["font.family"] = "IPAexGothic"
 class EMG:
     """
     筋電位を扱うクラス
+
+    Attributes
+    ----------
+    data : pandas.DataFrame
+        筋電位データ
+
+    fs : float
+        サンプリング周波数
+
+    H : pandas.DataFrame
+        筋シナジーの重み
+
+    W : pandas.DataFrame
+        筋シナジーの時間変化
+
+    muscle_colors : str | list = 'tab:blue'
+        筋肉に対応する色
+
+    begin_time : float
+        対象範囲の開始時間
+
+    end_time : float
+        対象範囲の終了時間
+
+    begin_time_idx : int
+        対象範囲の開始時間のインデックス
+
+    end_time_idx : int
+        対象範囲の終了時間のインデックス
+
+    Examples
+    --------
+    >>> from measurexp.EMG import EMG
+    >>> emg = EMG()
+    >>> emg.read('EMG.csv')
+    >>> emg.set_time(0, 30)
+    >>> emg.prep()
+    >>> emg.plot_synergy()
+    >>> emg.set_colors('../muscle_colors.csv')
+    >>> emg.plot_synergy_wights()
     """
+
     def __init__(self):
         # 筋電位データ
         self.data: pd.DataFrame = None
@@ -27,9 +68,21 @@ class EMG:
         self.end_time_idx: int
 
     def set_colors(self, colors: str | list) -> 'EMG':
+        """筋肉に対応する色を設定します。
+
+        Parameters
+        ----------
+        colors : str | list
+            筋肉に対応する色のリストまたは文字列
+
+        Returns
+        -------
+        self : EMG
+        """
         if type(colors) in (str, list):
             if os.path.isfile(colors):
-                self.muscles_color = pd.read_csv(colors, header=None).values.reshape(-1).tolist()
+                self.muscles_color = pd.read_csv(
+                    colors, header=None).values.reshape(-1).tolist()
                 return self
             self.muscles_color = colors
         else:
@@ -43,6 +96,17 @@ class EMG:
         return muscles_name
 
     def read(self, filename: str) -> 'EMG':
+        """データファイル (*.csv) を読み込みます。
+
+        Parameters
+        ----------
+        filename : str
+            データファイル (*.csv)
+
+        Returns
+        -------
+        self : EMG
+        """
         try:
             self.data = pd.read_csv(filename, encoding='Shift-JIS', header=116)
         except UnicodeDecodeError as err:
@@ -72,16 +136,35 @@ class EMG:
         em[:] -= em.mean()
         b, a = signal.butter(n, Wn / self.fs * 2, btype='low')
         em[:] = signal.filtfilt(b, a, em)
-        end_index = self.data.loc[self.begin_time:self.end_time].values.shape[0]
+        # end_index = self.data.loc[self.begin_time:self.end_time]
+        # .values.shape[0]
         em = em[self.begin_time_idx:self.end_time_idx]
         rms = self._window_rms(em, self.fs, period)
         return rms
 
     def prep(self, period: float = 0.5, n: int = 5, Wn: int = 50) -> 'EMG':
+        """データの下処理を行います。
+
+        Parameters
+        ----------
+        period : float = 0.5
+            RMS するウィンドウの範囲 (秒)
+
+        n : int = 5
+            ローパスフィルターの次数
+
+        Wn : int = 50
+            ローパスフィルターの遮断周波数
+
+        Returns
+        -------
+        self : EMG
+        """
         times = self.data.index
         times = times[self.begin_time_idx:self.end_time_idx]
         # times = times[(times >= self.begin_time) & (times < self.end_time)]
-        self.rms = pd.DataFrame(index=times).loc[self.begin_time:self.end_time, :]
+        self.rms = pd.DataFrame(
+            index=times).loc[self.begin_time:self.end_time, :]
         for muscle in self.data.columns[::-1]:
             self.rms.insert(
                 0,
@@ -112,13 +195,39 @@ class EMG:
         return (VAFs, W, H)
 
     def set_time(self, begin_time: float, end_time: float) -> 'EMG':
+        """処理対象時間を設定します。
+
+        Parameters
+        ----------
+        begin_time : float
+            処理範囲の開始時間
+
+        end_time : float
+            処理範囲の終了時間
+
+        Returns
+        -------
+        self : EMG
+        """
         self.begin_time, self.end_time = begin_time, end_time
-        times = self.data.reset_index().loc[:,['時間 [s]']]
-        time_idx = times[(times.iloc[:,0] >= self.begin_time) & (times.iloc[:,0] < self.end_time)].index
+        times = self.data.reset_index().loc[:, ['時間 [s]']]
+        time_idx = times[(times.iloc[:, 0] >= self.begin_time)
+                         & (times.iloc[:, 0] < self.end_time)].index
         self.begin_time_idx, self.end_time_idx = time_idx[0], time_idx[-1]
         return self
 
     def calc_synergy(self, max_vaf: float = 0.9) -> 'EMG':
+        """筋シナジーを計算します。
+
+        Parameters
+        ----------
+        max_vaf : float = 0.9
+            最大 VAF
+
+        Returns
+        -------
+        self : EMG
+        """
         X = self.rms.values
         self.VAFs, W, H = self._calc_synergy(X, max_vaf)
         self.W = pd.DataFrame(
@@ -135,6 +244,17 @@ class EMG:
         return self
 
     def plot_synergy(self, **args) -> 'EMG':
+        """筋シナジーの時間変化を表示します。
+
+        Parameters
+        ----------
+        args : Any
+
+
+        Returns
+        -------
+        self : EMG
+        """
         fig, ax = plt.subplots()
         self.W.plot(ax=ax, **args)
         ax.set_xlim(self.begin_time, self.end_time)
@@ -144,11 +264,21 @@ class EMG:
         return self
 
     def plot_synergy_weights(self) -> 'EMG':
-        fig, ax = plt.subplots(self.n_synergy, figsize=(6.4, 1.6 * self.n_synergy))
-        if self.n_synergy == 1: ax = [ax]
+        """筋シナジーを表示します。
+
+        Returns
+        -------
+        self : EMG
+        """
+
+        fig, ax = plt.subplots(
+            self.n_synergy, figsize=(6.4, 1.6 * self.n_synergy))
+        if self.n_synergy == 1:
+            ax = [ax]
         for _ in range(self.n_synergy):
-            self.H.iloc[_,:].plot.bar(ax=ax[_], color=self.muscles_color)
-            if _ == self.n_synergy - 1: break
+            self.H.iloc[_, :].plot.bar(ax=ax[_], color=self.muscles_color)
+            if _ == self.n_synergy - 1:
+                break
             ax[_].axes.xaxis.set_visible(False)
         fig.tight_layout()
         plt.show()
