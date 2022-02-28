@@ -1,9 +1,10 @@
 import re
-import sys
+# import sys
 import os
 import pandas as pd
 import numpy as np
-from scipy import signal
+# from scipy import signal
+from scipy import ndimage
 from sklearn import decomposition
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "IPAexGothic"
@@ -49,14 +50,19 @@ class EMG:
     >>> emg.read('EMG.csv')
     >>> emg.set_time(0, 30)
     >>> emg.prep()
+    >>> emg.calc_synergy()
     >>> emg.plot_synergy()
     >>> emg.set_colors('../muscle_colors.csv')
-    >>> emg.plot_synergy_wights()
+    >>> emg.plot_synergy_weights()
     """
 
     def __init__(self):
         # 筋電位データ
         self.data: pd.DataFrame = None
+        # フィルター後のデータ
+        self.rms: pd.DataFrame = None
+        # 正規化後のデータ
+        self.norm: pd.DataFrame = None
         # サンプリング周波数
         self.fs: float = None
         self.H: pd.DataFrame = None
@@ -112,30 +118,30 @@ class EMG:
         except UnicodeDecodeError as err:
             print(err)
             print('デコードできません。正しい文字コードを指定してください。')
-            sys.exit()
         except FileNotFoundError as err:
             print(err)
             print('筋電位データのファイルを指定してください。')
 
         col_muscles = self.data.columns.tolist()[1:]
-        self.data.columns = ['時間 [s]'] \
+        self.data.columns = ['Time [s]'] \
             + [self._col2muscles_name(_) for _ in col_muscles]
-        self.data.set_index('時間 [s]', inplace=True)
+        self.data.set_index('Time [s]', inplace=True)
         self.begin_time, self.end_time = self.data.index[[0, -1]]
         self.fs = self.data.shape[0] / (self.end_time - self.begin_time)
         return self
 
     def _window_rms(self, sig: np.ndarray, fs: float, weight: float):
         emp2 = np.power(sig, 2)
-        v = np.ones(int(fs * weight)) / (int(fs) * weight)
-        rms = np.sqrt(np.convolve(a=emp2, v=v, mode='same'))
+        # v = np.ones(int(fs * weight)) / int(fs * weight)
+        # rms = np.sqrt(np.convolve(a=emp2, v=v, mode='same'))
+        rms = np.sqrt(ndimage.gaussian_filter1d(emp2, weight * fs))
         return rms
 
     def _col_rms(self, muscle: str, period: float, n: int = 5, Wn: int = 50):
         em = self.data.loc[:, muscle].values.copy()
         em[:] -= em.mean()
-        b, a = signal.butter(n, Wn / self.fs * 2, btype='low')
-        em[:] = signal.filtfilt(b, a, em)
+        # b, a = signal.butter(n, Wn / self.fs * 2, btype='low')
+        # em[:] = signal.filtfilt(b, a, em)
         # end_index = self.data.loc[self.begin_time:self.end_time]
         # .values.shape[0]
         em = em[self.begin_time_idx:self.end_time_idx]
@@ -210,13 +216,13 @@ class EMG:
         self : EMG
         """
         self.begin_time, self.end_time = begin_time, end_time
-        times = self.data.reset_index().loc[:, ['時間 [s]']]
+        times = self.data.reset_index().loc[:, ['Time [s]']]
         time_idx = times[(times.iloc[:, 0] >= self.begin_time)
                          & (times.iloc[:, 0] < self.end_time)].index
         self.begin_time_idx, self.end_time_idx = time_idx[0], time_idx[-1]
         return self
 
-    def calc_synergy(self, max_vaf: float = 0.9) -> 'EMG':
+    def calc_synergy(self, max_vaf: float = 0.9, norm: bool = True) -> 'EMG':
         """筋シナジーを計算します。
 
         Parameters
@@ -224,11 +230,19 @@ class EMG:
         max_vaf : float = 0.9
             最大 VAF
 
+        norm : bool = True
+            正規化した筋シナジーで計算する
+
         Returns
         -------
         self : EMG
         """
-        X = self.rms.values
+        if self.norm is None:
+            print('正規化されたデータが存在しません。正規化する必要があります。')
+            return EMG
+
+        X = self.norm.values if norm else self.rms.values
+
         self.VAFs, W, H = self._calc_synergy(X, max_vaf)
         self.W = pd.DataFrame(
             W,
@@ -243,12 +257,12 @@ class EMG:
         self.n_synergy = self.H.shape[0]
         return self
 
-    def plot_synergy(self, **args) -> 'EMG':
+    def plot_synergy(self, **kwargs) -> 'EMG':
         """筋シナジーの時間変化を表示します。
 
         Parameters
         ----------
-        args : Any
+        kwargs : Any
 
 
         Returns
@@ -256,7 +270,11 @@ class EMG:
         self : EMG
         """
         fig, ax = plt.subplots()
-        self.W.plot(ax=ax, **args)
+
+        plt_kwargs = {'ax': ax}
+        if kwargs is not None:
+            plt_kwargs.update(kwargs)
+        self.W.plot(**plt_kwargs)
         ax.set_xlim(self.begin_time, self.end_time)
         ax.yaxis.set_major_formatter(plt.ScalarFormatter(useMathText=True))
         ax.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
