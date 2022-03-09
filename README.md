@@ -1,5 +1,6 @@
 # measurexp (Measurement experiments)
-[![Python Package using Conda](https://github.com/bcl-group/measurexp/actions/workflows/python-package-conda.yml/badge.svg?branch=master)](https://github.com/bcl-group/measurexp/actions/workflows/python-package-conda.yml)
+[![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
+
 
 Python 用 運動解析ライブラリー
 
