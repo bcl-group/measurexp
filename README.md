@@ -7,6 +7,9 @@ Python 用 運動解析ライブラリー
 - [筋電筋解析](EMG.md)
 - [筋シナジー解析](muscle_synergy.md)
 
+## 規格
+- [被験者ファイルについて](about-participants.md)
+
 ## ビルド・インストール
 ### 依存
 実行に必要な Python のバージョンは 3.10 以上です。
