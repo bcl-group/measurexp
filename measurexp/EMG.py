@@ -8,6 +8,7 @@ from scipy import ndimage
 from sklearn import decomposition
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "IPAexGothic"
+# from scipy import signal
 
 
 class EMG:
@@ -37,12 +38,6 @@ class EMG:
     end_time : float
         対象範囲の終了時間
 
-    begin_time_idx : int
-        対象範囲の開始時間のインデックス
-
-    end_time_idx : int
-        対象範囲の終了時間のインデックス
-
     Examples
     --------
     >>> from measurexp.EMG import EMG
@@ -70,10 +65,9 @@ class EMG:
         self.begin_time: float = None
         self.end_time: float = None
         self.muscles_color: str | list = 'tab:blue'
-        self.begin_time_idx: int
-        self.end_time_idx: int
+        self.taskname: str = 'Unnamed'
 
-    def set_colors(self, colors: str | list) -> 'EMG':
+    def set_colors(self, colors) -> 'EMG':
         """筋肉に対応する色を設定します。
 
         Parameters
@@ -122,61 +116,57 @@ class EMG:
             print(err)
             print('筋電位データのファイルを指定してください。')
 
+        # カラム名取得
         col_muscles = self.data.columns.tolist()[1:]
+        # 新しいカラム名を定義
         self.data.columns = ['Time [s]'] \
             + [self._col2muscles_name(_) for _ in col_muscles]
-        self.data.set_index('Time [s]', inplace=True)
-        self.begin_time, self.end_time = self.data.index[[0, -1]]
+        self.data.loc[:, 'タスク名'] = self.taskname
+        # インデックスの設定
+        self.data.set_index(['タスク名', 'Time [s]'], inplace=True)
+        self.begin_time, self.end_time = \
+            self.data.index[0][1], self.data.index[-1][1]
         self.fs = self.data.shape[0] / (self.end_time - self.begin_time)
         return self
 
-    def _window_rms(self, sig: np.ndarray, fs: float, weight: float):
-        emp2 = np.power(sig, 2)
-        # v = np.ones(int(fs * weight)) / int(fs * weight)
-        # rms = np.sqrt(np.convolve(a=emp2, v=v, mode='same'))
-        rms = np.sqrt(ndimage.gaussian_filter1d(emp2, weight * fs))
-        return rms
+    def name(self, taskname: str) -> 'EMG':
+        """タスク名を設定します。
 
-    def _col_rms(self, muscle: str, period: float, n: int = 5, Wn: int = 50):
-        em = self.data.loc[:, muscle].values.copy()
-        em[:] -= em.mean()
-        # b, a = signal.butter(n, Wn / self.fs * 2, btype='low')
-        # em[:] = signal.filtfilt(b, a, em)
-        # end_index = self.data.loc[self.begin_time:self.end_time]
-        # .values.shape[0]
-        em = em[self.begin_time_idx:self.end_time_idx]
-        rms = self._window_rms(em, self.fs, period)
-        return rms
+        Parameters
+        ----------
+        taskname : str
+            タスク名
 
-    def prep(self, period: float = 0.5, n: int = 5, Wn: int = 50) -> 'EMG':
+        Return
+        ------
+        self : EMG
+        """
+        self.taskname = taskname
+        return self
+
+    def prep(self, period: float = 0.2) -> 'EMG':
         """データの下処理を行います。
 
         Parameters
         ----------
-        period : float = 0.5
+        period : float = 0.1
             RMS するウィンドウの範囲 (秒)
 
-        n : int = 5
-            ローパスフィルターの次数
+        # n : int = 5
+            # ローパスフィルターの次数
 
-        Wn : int = 50
-            ローパスフィルターの遮断周波数
+        # Fc : int = 50
+            # ローパスフィルターの遮断周波数
 
         Returns
         -------
         self : EMG
         """
-        times = self.data.index
-        times = times[self.begin_time_idx:self.end_time_idx]
-        # times = times[(times >= self.begin_time) & (times < self.end_time)]
-        self.rms = pd.DataFrame(
-            index=times).loc[self.begin_time:self.end_time, :]
-        for muscle in self.data.columns[::-1]:
-            self.rms.insert(
-                0,
-                muscle,
-                self._col_rms(muscle, period=period, n=n, Wn=Wn)
-            )
+        x = self.data.loc[:, self.begin_time:self.end_time, :].copy()
+        x[:] = np.power(x - x.mean(), 2)
+        for _ in x:
+            x[_][:] = ndimage.gaussian_filter1d(x[_], self.fs * period)
+        self.rms = np.sqrt(x)
         return self
 
     def _vaf(self, X: np.ndarray, W: np.ndarray, H: np.ndarray):
@@ -216,10 +206,6 @@ class EMG:
         self : EMG
         """
         self.begin_time, self.end_time = begin_time, end_time
-        times = self.data.reset_index().loc[:, ['Time [s]']]
-        time_idx = times[(times.iloc[:, 0] >= self.begin_time)
-                         & (times.iloc[:, 0] < self.end_time)].index
-        self.begin_time_idx, self.end_time_idx = time_idx[0], time_idx[-1]
         return self
 
     def calc_synergy(self, max_vaf: float = 0.9, norm: bool = True) -> 'EMG':
