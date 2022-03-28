@@ -1,6 +1,8 @@
 # measurexp (Measurement experiments)
 [![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
 
+## Python バージョン
+3.9.7
 
 Python 用 運動解析ライブラリー
 
