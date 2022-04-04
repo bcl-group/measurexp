@@ -12,21 +12,20 @@ Python 用 運動解析ライブラリー
 ## 規格
 - [被験者ファイルについて](about-participants.md)
 
-## ビルド・インストール
-### 依存
-実行に必要な Python のバージョンは 3.10 以上です。
+## 開発環境
 ```bash
-conda create --name py310 python=3.10 -y
-conda activate py310
+pyenv global 3.9.7
+python -m pip install -U pip setuptools
+pip install poetry
+
+poetry shell
+poetry update
 ```
 
-このプロジェクトを Python パッケージとしてインストールできます。
-
+## ビルド・インストール
 ```bash
-conda activate py310
-python3 -m pip install --upgrade build twine
-python3 -m build
-pip install dist/measurexp-0.0.1-py3-none-any.whl
+poetry build
+poetry install dist/measurexp-0.1.0-py3-none-any.whl
 ```
 
 ### アンインストール
