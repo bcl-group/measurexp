@@ -1,8 +1,8 @@
 # measurexp (Measurement experiments)
 [![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
 
-## Python バージョン
-3.9.7
+## 対応 Python バージョン
+3.9.10
 
 Python 用 運動解析ライブラリー
 
@@ -14,7 +14,7 @@ Python 用 運動解析ライブラリー
 
 ## 開発環境
 ```bash
-pyenv global 3.9.7
+pyenv global 3.9.10
 python -m pip install -U pip setuptools
 pip install poetry
 
