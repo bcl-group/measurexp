@@ -3,6 +3,7 @@ import torch
 from measurexp import EMG
 import glob
 import re
+import matplotlib.pyplot as plt
 from typing import Any
 # Non-negative Tensor Factorization
 from tensorly.decomposition import non_negative_parafac_hals as NTF
@@ -37,6 +38,7 @@ class IdEMG:
 
     Examples
     --------
+    >>> from measurexp.NTF.analysis import IdEMG
     >>> csv_dir = '/home/user/experiments/results/202103/A'
     >>> idEMG = IdEMG(verbose=True)
     >>> idEMG.read(csv_dir)
@@ -51,7 +53,7 @@ class IdEMG:
         verbose : bool
             詳細を表示
         """
-        self.ranks: list[Any] = [None for _ in range(16)]
+        self.vafs: list[Any] = [None for _ in range(16)]
         self.ntfs: list[Any] = [None for _ in range(16)]
         self.verbose = verbose
 
@@ -105,6 +107,9 @@ class IdEMG:
             データが存在するディレクトリ
         """
         file_list: list[str] = glob.glob(f'{dir}/EMG-*.csv')
+        if len(file_list) == 0:
+            logger.error('ファイルが存在しません')
+            raise FileNotFoundError
         with Pool() as pool:
             self.emgs = pool.map(type(self).read_file, [
                                  (_, self.verbose) for _ in file_list])
@@ -138,21 +143,56 @@ class IdEMG:
 
         Parameter
         ---------
-        rank: int
+        rank : int
 
         Return
         ------
-        self: IdEMG
+        self : IdEMG
         """
         self.ntfs[rank - 1] = \
             NTF(self.tensor_data, rank=rank, svd='truncated_svd')
+        self.vafs[rank - 1] = self.vaf(rank=rank)
         if self.verbose:
-            logger.info(f'VAF (rank: {rank}): {self.vaf(rank=rank)}')
+            logger.info(f'VAF (rank: {rank}): {self.vafs[rank - 1]}')
         return self
+
+    def runall(self, t_VAF: float = 0.9) -> 'IdEMG':
+        """VAF の閾値まで非負値テンソル因子分解を実行します。
+
+        Parameter
+        ---------
+        t_VAF : float
+            VAF の閾値
+
+        Return
+        ------
+        self : IdEMG
+        """
+        self.t_VAF = t_VAF
+        for r in range(16):
+            rank = r + 1
+            self.run(rank=rank)
+            if self.vafs[r] > t_VAF:
+                break
+        return self
+
+    def plot_vaf(self):
+        vaf = np.array(list(filter(None, self.vafs)))
+        _, ax = plt.subplots()
+        ax.hlines(0.9, 1, len(vaf), color='tab:gray',
+                  linestyles='--', linewidth=0.5)
+        ax.plot([_ + 1 for _ in range(len(vaf))], vaf)
+        ax.scatter([_ + 1 for _ in range(len(vaf))], vaf)
+        ax.set_ylim([0, 1])
+        ax.set_xlim([1, len(vaf)])
+        ax.set_xticks([_ + 1 for _ in range(len(vaf))])
+        ax.set_ylabel('Variance Accounted For (VAF)')
+        ax.set_xlabel('Number of muscle synergies')
+        plt.show()
 
 
 if __name__ == '__main__':
     csv_dir: str = '/mnt/d/experiment/results/202103/A'
     idEMG = IdEMG(verbose=True)
     idEMG.read(csv_dir)
-    idEMG.run(rank=3)
+    idEMG.runall()
