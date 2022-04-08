@@ -58,6 +58,7 @@ class IdEMG:
         self.vafs: list[Any] = [None for _ in range(16)]
         self.ntfs: list[Any] = [None for _ in range(16)]
         self.verbose = verbose
+        self.color = 'tab:blue'
 
     def get_title(self, filename: str) -> str:
         """ファイル名からタイトルを返します。
@@ -215,8 +216,18 @@ class IdEMG:
                 break
         return self
 
-    def plot_vaf(self):
+    def plot_vaf(self) -> 'IdEMG':
+        """VAF をプロットします。
+        runall メソッドを呼び出し後に実行する必要があります。
+
+        Return
+        ------
+        self : IdEMG | None
+        """
         vaf = np.array(list(filter(None, self.vafs)))
+        if len(vaf) == 0:
+            logger.error('NTF が行われていません。`runall` を実行する必要があります。')
+            return None
         _, ax = plt.subplots()
         ax.hlines(0.9, 1, len(vaf), color='tab:gray',
                   linestyles='--', linewidth=0.5)
@@ -228,6 +239,15 @@ class IdEMG:
         ax.set_ylabel('Variance Accounted For (VAF)')
         ax.set_xlabel('Number of muscle synergies')
         plt.show()
+        return IdEMG
+
+    def plot_synergy(self, rank: int, **kwargs):
+        df = pd.DataFrame(self.ntfs[rank-1][1][2].cpu())
+        df.index = self.muscles_list
+        for s in range(len(df.columns)):
+            df[s].plot.bar(figsize=(6.4, 1.2), color=self.color, **kwargs)
+            plt.show()
+        return self
 
 
 if __name__ == '__main__':
