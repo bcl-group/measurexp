@@ -3,7 +3,11 @@ import torch
 from measurexp import EMG
 import glob
 import re
+import hashlib
+import pathlib
+import os
 import matplotlib.pyplot as plt
+import pandas as pd
 from typing import Any
 # Non-negative Tensor Factorization
 from tensorly.decomposition import non_negative_parafac_hals as NTF
@@ -40,10 +44,8 @@ class IdEMG:
     --------
     >>> from measurexp.NTF.analysis import IdEMG
     >>> csv_dir = '/home/user/experiments/results/202103/A'
-    >>> idEMG = IdEMG(verbose=True)
-    >>> idEMG.read(csv_dir)
-    >>> idEMG.run(rank=3)
-    >>> vaf = idEMG.vaf(rank=3)
+    >>> idEMG.read(csv_dir, verbose=False)
+    >>> idEMG.runall()
     """
 
     def __init__(self, verbose: bool = False) -> None:
@@ -94,9 +96,26 @@ class IdEMG:
             logger.info(f'読み込み完了... {file}')
         return emg
 
-    def read(self, dir: str) -> 'IdEMG':
-        """データ (*.csv) の存在するディレクトリを指定し、
+    def files_stat_hash(self, file_list: list[str]) -> str:
+        """ファイルのメタデータを MD5 でハッシュ化します。
+        """
+        stat_txt: str = ''
+        for file_name in file_list:
+            p = pathlib.Path(file_name)
+            stat_txt += str(p.stat())
+        hash = hashlib.md5(stat_txt.encode())
+        return hash.hexdigest()
+
+    @classmethod
+    def read(
+        cls,
+        dir: str,
+        verbose: bool = False,
+        cache: bool = True
+    ) -> 'IdEMG':
+        """データ (EMG-*.csv) の存在するディレクトリを指定し、
         データを読み込み並列下処理を行います。
+        キャッシュが有効化されている場合、キャッシュから読み込みます。
 
         このディレクトリ内のファイルはすべて同一被験者であり、
         階層を持つことはできません。
@@ -105,21 +124,41 @@ class IdEMG:
         ---------
         dir : str
             データが存在するディレクトリ
+
+        verbose : bool
+            詳細を表示
+
+        cache : bool
+            キャッシュの有効化
+
+        : IdEMG
+            IdEMG のインスタンス
         """
+        self = cls()
+        self.verbose = verbose
         file_list: list[str] = glob.glob(f'{dir}/EMG-*.csv')
         if len(file_list) == 0:
-            logger.error('ファイルが存在しません')
+            logger.error('ファイルが存在しません。')
             raise FileNotFoundError
-        with Pool() as pool:
-            self.emgs = pool.map(type(self).read_file, [
-                                 (_, self.verbose) for _ in file_list])
-            if self.verbose:
-                logger.info('全データの読み込み完了')
-        # pd.DataFrame -> np.ndarray
-        self.tensor_data_nd: np.ndarray = np.array([_.rms for _ in self.emgs])
-        # np.ndarray -> torch.Tensor
-        self.tensor_data: torch.Tensor = torch.tensor(
-            self.tensor_data_nd, device='cuda', dtype=torch.float)
+        data_cache = f'/tmp/{self.files_stat_hash(file_list)}.pkl'
+        if os.path.isfile(data_cache) and cache:
+            logger.info('キャッシュから読み込んでいます。')
+            self = pd.read_pickle(data_cache)
+        else:
+            if not cache:
+                logger.info('キャッシュが無効化されています')
+            with Pool() as pool:
+                self.emgs = pool.map(type(self).read_file, [
+                                    (_, self.verbose) for _ in file_list])
+                if self.verbose:
+                    logger.info('全データの読み込み完了しました。')
+            # pd.DataFrame -> np.ndarray
+            self.tensor_data_nd: np.ndarray = np.array(
+                [_.rms for _ in self.emgs])
+            # np.ndarray -> torch.Tensor
+            self.tensor_data: torch.Tensor = torch.tensor(
+                self.tensor_data_nd, device='cuda', dtype=torch.float)
+            pd.to_pickle(self, data_cache)
         return self
 
     def vaf(self, rank: int) -> float:
