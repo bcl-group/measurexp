@@ -1,5 +1,7 @@
-# measurexp (Measurement experiments)
+# measurexp
 [![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
+
+データ解析ライブラリ
 
 ## 対応 Python バージョン
 3.9.10
