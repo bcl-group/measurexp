@@ -13,7 +13,7 @@ const config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'MURATA', // Usually your GitHub org/user name.
+  organizationName: 'bcl-group', // Usually your GitHub org/user name.
   projectName: 'measurexp', // Usually your repo name.
 
   presets: [
