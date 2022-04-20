@@ -58,6 +58,11 @@ class IdEMG:
         self.vafs: list[Any] = [None for _ in range(16)]
         self.ntfs: list[Any] = [None for _ in range(16)]
         self.verbose = verbose
+        self.file_list: list[str] = []
+        # 条件リスト
+        self.condition_list: list[str] = []
+        # セッションに対応した条件リスト
+        self.conditions: list[str] = []
         self.color = 'tab:blue'
 
     def get_title(self, filename: str) -> str:
@@ -111,6 +116,7 @@ class IdEMG:
     def read(
         cls,
         dir: str,
+        conditions_list: list[str],
         verbose: bool = False,
         cache: bool = True
     ) -> 'IdEMG':
@@ -137,11 +143,16 @@ class IdEMG:
         """
         self = cls()
         self.verbose = verbose
-        file_list: list[str] = glob.glob(f'{dir}/EMG-*.csv')
-        if len(file_list) == 0:
+        self.file_list = glob.glob(f'{dir}/EMG-*.csv')
+        self.condition_list = conditions_list
+        condition_idx = [
+            int(re.search(r'EMG-\d{2}(\d{1})\d{1}\.csv$', filename)[1])
+            for filename in self.file_list]
+        self.conditions = [self.condition_list[idx-1] for idx in condition_idx]
+        if len(self.file_list) == 0:
             logger.error('ファイルが存在しません。')
             raise FileNotFoundError
-        data_cache = f'/tmp/{self.files_stat_hash(file_list)}.pkl'
+        data_cache = f'/tmp/{self.files_stat_hash(self.file_list)}.pkl'
         if os.path.isfile(data_cache) and cache:
             logger.info('キャッシュから読み込んでいます。')
             self = pd.read_pickle(data_cache)
@@ -150,14 +161,14 @@ class IdEMG:
                 logger.info('キャッシュが無効化されています')
             with Pool() as pool:
                 self.emgs = pool.map(type(self).read_file, [
-                                    (_, self.verbose) for _ in file_list])
+                                    (_, self.verbose) for _ in self.file_list])
                 if self.verbose:
                     logger.info('全データの読み込み完了しました。')
             # pd.DataFrame -> np.ndarray
-            self.tensor_data_nd: np.ndarray = np.array(
+            self.tensor_data_nd = np.array(
                 [_.rms for _ in self.emgs])
             # np.ndarray -> torch.Tensor
-            self.tensor_data: torch.Tensor = torch.tensor(
+            self.tensor_data = torch.tensor(
                 self.tensor_data_nd, device='cuda', dtype=torch.float)
             pd.to_pickle(self, data_cache)
         return self
@@ -248,6 +259,19 @@ class IdEMG:
             df[s].plot.bar(figsize=(6.4, 1.2), color=self.color, **kwargs)
             plt.show()
         return self
+
+    def plot_session(self, rank: int, **kwargs):
+        """セッションごとの筋シナジーの割合をプロットする。
+
+        Parameter
+        ---------
+        rank : int
+            筋シナジー数
+        """
+        _, ax = plt.subplots()
+        df = pd.DataFrame(self.ntfs[rank-1][1][0].cpu(), index=self.conditions)
+        df.plot.bar(ax=ax)
+        ax.set_ylim(0, 1)
 
 
 if __name__ == '__main__':
