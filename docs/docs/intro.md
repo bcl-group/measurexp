@@ -2,46 +2,53 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# はじめに
+このリポジトリは運動解析のための Python ライブラリです。
+使用はもちろん利用 (改変等) も可能です。
 
-Let's discover **Docusaurus in less than 5 minutes**.
+### 開発及びインストールに必要な環境
+このリポジトリは Python 3.9.10 での使用を想定していますが、他のバージョンでもできるかもしれません。
 
-## Getting Started
-
-Get started by **creating a new site**.
-
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
-
-### What you'll need
-
-- [Node.js](https://nodejs.org/en/download/) version 14 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
+```sh
+pyenv global 3.9.10
 ```
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
+Python のパッケージ管理ツールである Poetry に依存しているため、
+開発およびビルド行う場合は Poetry のインストールが必要です。
 
-The command also installs all necessary dependencies you need to run Docusaurus.
+```sh
+$ python -m pip install -U pip setuptools
 
-## Start your site
+# poetry のインストール
+$ python -m pip install poetry
 
-Run the development server:
+# 仮想環境内のシェルに入る
+$ poetry shell
 
-```bash
-cd my-website
-npm run start
+# 依存するパッケージのインストール
+(.venv) $ poetry update
 ```
 
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
+## ビルドおよびインストール
+パッケージのビルドは次のように行います。ビルドを行うことにより、pip や poetry のパッケージとして利用が可能です。
+```sh
+(.venv) $ poetry build
+```
 
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
+ビルドしたパッケージのインストールは次のように行います。
+```sh
+poetry add dist/measurexp-0.1.0.tar.gz
+```
 
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+pip の場合は次のようにします。
+
+```sh
+pip install dist/measurexp-0.1.0.tar.gz
+```
+
+## アンインストール
+パッケージのアンインストールは通常の方法で行います。
+
+```sh
+pip uninstall measurexp -y
+```
