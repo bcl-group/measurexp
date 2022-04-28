@@ -91,12 +91,12 @@ class IdEMG:
 
     @classmethod
     def read_file(cls, args: tuple) -> EMG.EMG:
-        file, verbose = args
+        file, verbose, begin_time, end_time = args
         if verbose:
             logger.info(f'読み込み中... {file}')
         emg = EMG.EMG()
         emg.read(file)
-        emg.set_time(0, 40)
+        emg.set_time(begin_time, end_time)
         emg.prep()
         if verbose:
             logger.info(f'読み込み完了... {file}')
@@ -116,6 +116,7 @@ class IdEMG:
     def read(
         cls,
         dir: str,
+        muscles: list[str],
         conditions_list: list[str],
         verbose: bool = False,
         cache: bool = True
@@ -131,6 +132,9 @@ class IdEMG:
         ---------
         dir : str
             データが存在するディレクトリ
+
+        muscles : list[str]
+            筋肉の順番
 
         verbose : bool
             詳細を表示
@@ -254,7 +258,9 @@ class IdEMG:
 
     def plot_synergy(self, rank: int, **kwargs):
         df = pd.DataFrame(self.ntfs[rank-1][1][2].cpu())
-        df.index = self.muscles_list
+        # df = df.loc[:, self.muscles_list]
+        # print(df)
+        # df.index = self.muscles_list
         for s in range(len(df.columns)):
             df[s].plot.bar(figsize=(6.4, 1.2), color=self.color, **kwargs)
             plt.show()

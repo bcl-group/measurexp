@@ -108,7 +108,8 @@ class EMG:
         self : EMG
         """
         try:
-            self.data = pd.read_csv(filename, encoding='Shift-JIS', header=116)
+            # self.data = pd.read_csv(filename, encoding='Shift-JIS', header=116)
+            self.data = pd.read_csv(filename)
         except UnicodeDecodeError as err:
             print(err)
             print('デコードできません。正しい文字コードを指定してください。')
@@ -117,15 +118,15 @@ class EMG:
             print('筋電位データのファイルを指定してください。')
 
         # カラム名取得
-        col_muscles = self.data.columns.tolist()[1:]
-        # 新しいカラム名を定義
-        self.data.columns = ['Time [s]'] \
-            + [self._col2muscles_name(_) for _ in col_muscles]
-        self.data.loc[:, 'タスク名'] = self.taskname
-        # インデックスの設定
-        self.data.set_index(['タスク名', 'Time [s]'], inplace=True)
+        # col_muscles = self.data.columns.tolist()[1:]
+        # # 新しいカラム名を定義
+        # self.data.columns = ['Time [s]'] \
+        #     + [self._col2muscles_name(_) for _ in col_muscles]
+        # self.data.loc[:, 'タスク名'] = self.taskname
+        # # インデックスの設定
+        self.data.set_index(['Time [s]'], inplace=True)
         self.begin_time, self.end_time = \
-            self.data.index[0][1], self.data.index[-1][1]
+            self.data.index[0], self.data.index[-1]
         self.fs = self.data.shape[0] / (self.end_time - self.begin_time)
         return self
 
@@ -162,7 +163,7 @@ class EMG:
         -------
         self : EMG
         """
-        x = self.data.loc[:, self.begin_time:self.end_time, :].copy()
+        x = self.data.loc[self.begin_time:self.end_time, :].copy()
         x[:] = np.power(x - x.mean(), 2)
         for _ in x:
             x[_][:] = ndimage.gaussian_filter1d(x[_], self.fs * period)
