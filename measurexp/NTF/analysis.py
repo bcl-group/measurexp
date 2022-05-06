@@ -16,8 +16,6 @@ from multiprocessing import Pool
 import tensorly as tl
 tl.set_backend('pytorch')
 
-# 個人の EMG クラス
-
 
 class IdEMG:
     """被験者 1 人の筋電位を扱うクラス
@@ -91,13 +89,14 @@ class IdEMG:
 
     @classmethod
     def read_file(cls, args: tuple) -> EMG.EMG:
-        file, verbose, begin_time, end_time = args
+        file, verbose, begin_time, end_time, muscles = args
         if verbose:
             logger.info(f'読み込み中... {file}')
         emg = EMG.EMG()
         emg.read(file)
         emg.set_time(begin_time, end_time)
         emg.prep()
+        emg.set_muscles(muscles)
         if verbose:
             logger.info(f'読み込み完了... {file}')
         return emg
@@ -165,7 +164,9 @@ class IdEMG:
                 logger.info('キャッシュが無効化されています')
             with Pool() as pool:
                 self.emgs = pool.map(type(self).read_file, [
-                                    (_, self.verbose) for _ in self.file_list])
+                    (_, self.verbose, 0, 40, muscles)
+                    for _ in self.file_list
+                ])
                 if self.verbose:
                     logger.info('全データの読み込み完了しました。')
             # pd.DataFrame -> np.ndarray
@@ -174,6 +175,7 @@ class IdEMG:
             # np.ndarray -> torch.Tensor
             self.tensor_data = torch.tensor(
                 self.tensor_data_nd, device='cuda', dtype=torch.float)
+            self.muscles = muscles
             pd.to_pickle(self, data_cache)
         return self
 
@@ -257,10 +259,10 @@ class IdEMG:
         return IdEMG
 
     def plot_synergy(self, rank: int, **kwargs):
-        df = pd.DataFrame(self.ntfs[rank-1][1][2].cpu())
-        # df = df.loc[:, self.muscles_list]
-        # print(df)
-        # df.index = self.muscles_list
+        df = pd.DataFrame(
+            self.ntfs[rank-1][1][2].cpu(),
+            index=self.muscles
+        )
         for s in range(len(df.columns)):
             df[s].plot.bar(figsize=(6.4, 1.2), color=self.color, **kwargs)
             plt.show()
