@@ -3,12 +3,11 @@ import re
 import os
 import pandas as pd
 import numpy as np
-# from scipy import signal
+from scipy import signal
 from scipy import ndimage
 from sklearn import decomposition
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "IPAexGothic"
-# from scipy import signal
 
 
 class EMG:
@@ -108,7 +107,8 @@ class EMG:
         self : EMG
         """
         try:
-            # self.data = pd.read_csv(filename, encoding='Shift-JIS', header=116)
+            # self.data = pd.read_csv(filename,
+            # encoding='Shift-JIS', header=116)
             self.data = pd.read_csv(filename)
         except UnicodeDecodeError as err:
             print(err)
@@ -117,13 +117,7 @@ class EMG:
             print(err)
             print('筋電位データのファイルを指定してください。')
 
-        # カラム名取得
-        # col_muscles = self.data.columns.tolist()[1:]
-        # # 新しいカラム名を定義
-        # self.data.columns = ['Time [s]'] \
-        #     + [self._col2muscles_name(_) for _ in col_muscles]
-        # self.data.loc[:, 'タスク名'] = self.taskname
-        # # インデックスの設定
+        # インデックスの設定
         self.data.set_index(['Time [s]'], inplace=True)
         self.begin_time, self.end_time = \
             self.data.index[0], self.data.index[-1]
@@ -168,6 +162,28 @@ class EMG:
         for _ in x:
             x[_][:] = ndimage.gaussian_filter1d(x[_], self.fs * period)
         self.rms = np.sqrt(x)
+        return self
+
+    def resample(self, fs: int) -> 'EMG':
+        df = self.rms.copy()
+        self.rms = pd.DataFrame(
+            signal.resample(df.to_numpy(), self.end_time * fs),
+            index=(np.arange(self.end_time * fs) / fs),
+            columns=df.columns
+        )
+        df = self.data.copy()
+        self.data = pd.DataFrame(
+            signal.resample(df.to_numpy(), self.end_time * fs),
+            index=(np.arange(self.end_time * fs) / fs),
+            columns=df.columns
+        )
+        self.fs = fs
+
+        return self
+
+    def set_muscles(self, muscles) -> 'EMG':
+        self.rms = self.rms.loc[:, muscles]
+        self.data = self.data.loc[:, muscles]
         return self
 
     def _vaf(self, X: np.ndarray, W: np.ndarray, H: np.ndarray):
