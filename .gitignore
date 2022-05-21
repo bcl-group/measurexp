@@ -159,3 +159,7 @@ test.py
 *.png
 *.txt
 *.db
+.bash_history
+.jupyter
+.config
+_*
