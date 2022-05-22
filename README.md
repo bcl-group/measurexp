@@ -3,8 +3,10 @@
 
 データ解析ライブラリ
 
-## 対応 Python バージョン
-3.9.10
+## 動作環境
+- Windows only
+- Python 3.9.12
+- visual-cpp-build-tools をインストール (https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
 Python 用 運動解析ライブラリー
 
@@ -16,11 +18,12 @@ Python 用 運動解析ライブラリー
 
 ## 開発環境
 ```bash
-pyenv global 3.9.10
+pyenv global 3.9.12
 python -m pip install -U pip setuptools
 pip install poetry
 
-poetry shell
+python -m poetry shell
+python -V # バージョンの確認
 poetry update
 ```
 
