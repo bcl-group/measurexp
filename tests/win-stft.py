@@ -5,10 +5,10 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = "MS Gothic"
 
-file = "C:\\Users\\hikari\\EMG-0441.csv"
+file = "D:\\experiment\\results\\202103\\A\\EMG-0441.csv"
 
 df = pd.read_csv(file, index_col="Time [s]")
-x = df["ヒラメ筋"].to_numpy()
+x = df["脊柱起立筋"].to_numpy()
 
 def get_fs(x: pd.DataFrame):
     n = len(x.index)
