@@ -21,6 +21,7 @@ dask = "^2022.5.0"
 distributed = "^2022.5.0"
 cupy-cuda116 = "^10.4.0"
 plotly = "^5.8.0"
+torchnmf = "^0.3.4"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
