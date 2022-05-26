@@ -127,7 +127,7 @@ def muscle_coef(df, session: int) -> np.ndarray:
     k = df.groupby(level=[0, 1]).std().loc[session] / df.groupby(level=[0, 1]).std().max()
     return k.to_numpy()
 
-def prep(data: pd.Series, sd: float = 0.2) -> pd.Series:
+def _prep(data: pd.Series, sd: float = 0.2) -> pd.Series:
     """
     データの下処理を行います。
 
@@ -175,6 +175,74 @@ def prep(data: pd.Series, sd: float = 0.2) -> pd.Series:
     power: pd.Series = pd.Series(cp.asnumpy(power), index=time)
 
     return power
+
+def prep(data: pd.Series, sd: float = 0.2, verbose: bool = False) -> pd.Series:
+    """
+    データの下処理を行います。
+
+    Parameter
+    ---------
+    data : pd.Series
+        筋電位データ (1 次元)
+
+    sd : float = 0.2
+        平滑化時のガウシアンフィルターの標準偏差
+
+    Return
+    ------
+    power : pd.Series
+        筋活動
+    """
+    time: pd.Series = data.reset_index().loc[:, "Time [s]"]
+    # サンプリング周波数
+    fs: float = (len(time) - 1) / (time[len(time) - 1] - time[0])
+
+    # フィルター掛け
+    b, a = signal.butter(5, np.array([50, 300]) / fs * 2, "band")
+    filtered: np.ndarray = signal.filtfilt(b, a, data)
+    
+    # 平滑化
+    power: cp.asarray = cp.asarray(filtered) ** 2
+    power[:]          = cndimage.gaussian_filter1d(power, sd * fs)
+    power[:]          = cp.sqrt(power)
+
+    # min-max 正規化 [0, 1]
+    power[:] = (power - power.min()) / (power.max() - power.min())
+
+    # time: pd.Series = pd.Series(t, name="Time [s]")
+    power_se: pd.Series = pd.Series(cp.asnumpy(power), index=time)
+
+    if verbose:
+        # fig, ax = plt.subplots(2, 2)
+        vdf = pd.DataFrame({
+            "生データ": data.to_numpy(),
+            "フィルター済みデータ": filtered,
+            "筋活動": cp.asnumpy(power)
+        }, index=time)
+        fig = plt.figure(figsize=(6.4*2, 4.8*2), dpi=150)
+        ax1 = plt.subplot2grid((3, 2), (0, 0))
+        ax2 = plt.subplot2grid((3, 2), (0, 1))
+        ax3 = plt.subplot2grid((3, 2), (1, 0))
+        ax4 = plt.subplot2grid((3, 2), (1, 1))
+        ax5 = plt.subplot2grid((3, 2), (2, 0), colspan=2)
+        # ax1.plot([1,2,3])
+
+        vdf.plot(y="生データ", ax=ax1, legend=False, xlabel=None)
+        vdf.plot(y="フィルター済みデータ", ax=ax3, legend=False)
+        vdf.plot(y="筋活動", ax=ax5, legend=False)
+        ax2.specgram(vdf.loc[:, "生データ"], Fs=fs)
+        ax4.specgram(vdf.loc[:, "フィルター済みデータ"], Fs=fs)
+
+        ax1.set_xlabel("")
+        ax1.tick_params(labelbottom=False)
+        ax2.set_xlabel("")
+        ax2.tick_params(labelbottom=False)
+        ax3.set_xlabel("")
+        ax4.set_xlabel("")
+        fig.tight_layout()
+        plt.show()
+
+    return power_se
 
 def prep_old(data: np.ndarray) -> np.ndarray:
     """
