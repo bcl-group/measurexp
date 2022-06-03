@@ -282,8 +282,13 @@ def plot_muscles(df: pd.DataFrame) -> None:
     """
     fig, ax = plt.subplots(16, 1, figsize=[6.4, 4.8*3])
     fig.suptitle(f"セッション {df.session}")
+    
+    tmp_df = df.reset_index()
+    tmp_df.drop("Task", axis=1, inplace=True)
+    tmp_df.index = pd.Series(tmp_df["index"].to_numpy(dtype=float) / 1e9, name="Time [s]")
+    tmp_df.drop("index", axis=1, inplace=True)
     for i, column in enumerate(df.columns):
-        df.loc[:, column].reset_index().loc[:, ["Time [s]", column]].set_index("Time [s]")\
+        tmp_df.loc[:, column].reset_index().loc[:, ["Time [s]", column]].set_index("Time [s]")\
             .plot(ax=ax[i], xlim=[0, 40], ylabel=column, ylim=[0, 1], legend=False)
         ax[i].set_xlabel(None)
         ax[i].tick_params(bottom=False, labelbottom=False)
@@ -303,8 +308,13 @@ def plot_muscles_ex(df: pd.DataFrame, muscles: list) -> None:
     fig, ax = plt.subplots(len(muscles), 1, figsize=[6.4, 4.8*2])
     fig.suptitle(f"セッション {df.session}")
     
+    tmp_df = df.reset_index()
+    tmp_df.drop("Task", axis=1, inplace=True)
+    tmp_df.index = pd.Series(tmp_df["index"].to_numpy(dtype=float) / 1e9, name="Time [s]")
+    tmp_df.drop("index", axis=1, inplace=True)
+
     for i, column in enumerate(muscles):
-        df.reset_index().loc[:, (["Time [s]"] + column)].set_index("Time [s]")\
+        tmp_df.reset_index().loc[:, (["Time [s]"] + column)].set_index("Time [s]")\
             .plot(ax=ax[i], xlim=[0, 40], ylim=[0, 1], legend=False)
         ax[i].set_xlabel(None)
         ax[i].tick_params(bottom=False, labelbottom=False)
@@ -354,13 +364,13 @@ def pre_processing(df: pd.DataFrame, n_session: int, verbose: bool = False):
         muscles[i] = x
     muscles: np.ndarray = np.array(muscles).T
     df_psed: pd.DataFrame \
-        = pd.DataFrame(muscles, columns=df.columns, index=pd.Series(t, name="Time [s]"))
+        = pd.DataFrame(muscles, columns=df.columns, index=pd.to_timedelta(t, unit="s")) # pd.Series(t, name="Time [s]"))
     # <<<
 
     df_psed["Session"] = n_session
     df_psed["Task"] = df.reset_index()["Task"][0]
     df_psed.reset_index(inplace=True)
-    df_psed.set_index(["Session", "Task", "Time [s]"], inplace=True)
+    df_psed.set_index(["Session", "Task", "index"], inplace=True)
     return df_psed
 
 def pre_processing_all(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
