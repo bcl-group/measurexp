@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import signal
-from scipy.ndimage import _filters
+# from scipy.ndimage import _filters
 import cupy as cp
-from cupyx.scipy import signal as csignal
+# from cupyx.scipy import signal as csignal
 import pandas as pd
 import re
-import glob
+# import glob
 from scipy import interpolate
 from cupyx.scipy import ndimage as cndimage
 import plotly.io as pio
@@ -33,9 +33,10 @@ def get_condition_name(filename: str) -> str:
         タスク名 (例: セッション: 1, 条件: 1 (1 回目))
     """
 
-    m = re.search("EMG-(\d\d)(\d)(\d)\.csv$", filename)
+    m = re.search(r"EMG-(\d\d)(\d)(\d)\.csv$", filename)
     n_session, i_condition, n_times = int(m[1]), int(m[2]), int(m[3])
     return f"セッション: {n_session}, 条件: {i_condition} ({n_times} 回目)"
+
 
 def get_session_number(filename: str) -> int:
     """
@@ -51,8 +52,9 @@ def get_session_number(filename: str) -> int:
     : int
         セッション番号
     """
-    m = re.search("EMG-(\d\d)(\d)(\d)\.csv$", filename)
+    m = re.search(r"EMG-(\d\d)(\d)(\d)\.csv$", filename)
     return int(m[1])
+
 
 def ppt(flist: list[str]) -> pd.DataFrame:
     """
@@ -80,7 +82,13 @@ def ppt(flist: list[str]) -> pd.DataFrame:
     df_A = pd.concat(p_A)
     return df_A
 
-def get_session(df: pd.DataFrame, session: int, start_time: float = 0, end_time: float = 40) -> pd.DataFrame:
+
+def get_session(
+    df: pd.DataFrame,
+    session: int,
+    start_time: float = 0,
+    end_time: float = 40
+) -> pd.DataFrame:
     """
     セッションを取得します
 
@@ -103,10 +111,12 @@ def get_session(df: pd.DataFrame, session: int, start_time: float = 0, end_time:
     pandas.DataFrame
     """
 
-    data = df.loc[(df.index.get_level_values('Time [s]') >= start_time) & (df.index.get_level_values('Time [s]') <= end_time)]
+    data = df.loc[(df.index.get_level_values('Time [s]') >= start_time) & (
+        df.index.get_level_values('Time [s]') <= end_time)]
     ret_df = data.loc[session, :, :].copy()
     ret_df.session = session
     return ret_df
+
 
 def muscle_coef(df, session: int) -> np.ndarray:
     """
@@ -116,7 +126,7 @@ def muscle_coef(df, session: int) -> np.ndarray:
     ----------
     df : pandas.DataFrame
         被験者の全セッションのデータ
-    
+
     session : int
         セッション番号
 
@@ -126,8 +136,10 @@ def muscle_coef(df, session: int) -> np.ndarray:
         標準偏差の最大値を返す
     """
 
-    k = df.groupby(level=[0, 1]).std().loc[session] / df.groupby(level=[0, 1]).std().max()
+    k = df.groupby(level=[0, 1]).std().loc[session] / \
+        df.groupby(level=[0, 1]).std().max()
     return k.to_numpy()
+
 
 def _prep(data: pd.Series, sd: float = 0.2) -> pd.Series:
     """
@@ -178,6 +190,7 @@ def _prep(data: pd.Series, sd: float = 0.2) -> pd.Series:
 
     return power
 
+
 def prep(data: pd.Series, sd: float = 0.2, verbose: bool = False) -> pd.Series:
     """
     データの下処理を行います。
@@ -202,11 +215,11 @@ def prep(data: pd.Series, sd: float = 0.2, verbose: bool = False) -> pd.Series:
     # フィルター掛け
     b, a = signal.butter(5, np.array([50, 200]) / fs * 2, "band")
     filtered: np.ndarray = signal.filtfilt(b, a, data)
-    
+
     # 平滑化
     power: cp.asarray = cp.asarray(filtered) ** 2
-    power[:]          = cndimage.gaussian_filter1d(power, sd * fs)
-    power[:]          = cp.sqrt(power)
+    power[:] = cndimage.gaussian_filter1d(power, sd * fs)
+    power[:] = cp.sqrt(power)
 
     # min-max 正規化 [0, 1]
     # power[:] = (power - power.min()) / (power.max() - power.min())
@@ -246,6 +259,7 @@ def prep(data: pd.Series, sd: float = 0.2, verbose: bool = False) -> pd.Series:
 
     return power_se
 
+
 def prep_old(data: np.ndarray) -> np.ndarray:
     """
     データの下処理を行います。(従来手法)
@@ -271,56 +285,6 @@ def prep_old(data: np.ndarray) -> np.ndarray:
     tmp: np.ndarray = cp.asnumpy(tmp)
     return tmp
 
-def plot_muscles(df: pd.DataFrame) -> None:
-    """
-    筋活動を表示します。
-
-    Parameter
-    ---------
-    df : pd.DataFrame
-        セッションのデータ (2 次元)
-    """
-    fig, ax = plt.subplots(16, 1, figsize=[6.4, 4.8*3])
-    fig.suptitle(f"セッション {df.session}")
-    
-    tmp_df = df.reset_index()
-    tmp_df.drop("Task", axis=1, inplace=True)
-    tmp_df.index = pd.Series(tmp_df["index"].to_numpy(dtype=float) / 1e9, name="Time [s]")
-    tmp_df.drop("index", axis=1, inplace=True)
-    for i, column in enumerate(df.columns):
-        tmp_df.loc[:, column].reset_index().loc[:, ["Time [s]", column]].set_index("Time [s]")\
-            .plot(ax=ax[i], xlim=[0, 40], ylabel=column, ylim=[0, 1], legend=False)
-        ax[i].set_xlabel(None)
-        ax[i].tick_params(bottom=False, labelbottom=False)
-    fig.tight_layout()
-    plt.show()
-
-
-def plot_muscles_ex(df: pd.DataFrame, muscles: list) -> None:
-    """
-    筋活動を表示します。
-
-    Parameter
-    ---------
-    df : pd.DataFrame
-        セッションのデータ (2 次元)
-    """
-    fig, ax = plt.subplots(len(muscles), 1, figsize=[6.4, 4.8*2])
-    fig.suptitle(f"セッション {df.session}")
-    
-    tmp_df = df.reset_index()
-    tmp_df.drop("Task", axis=1, inplace=True)
-    tmp_df.index = pd.Series(tmp_df["index"].to_numpy(dtype=float) / 1e9, name="Time [s]")
-    tmp_df.drop("index", axis=1, inplace=True)
-
-    for i, column in enumerate(muscles):
-        tmp_df.reset_index().loc[:, (["Time [s]"] + column)].set_index("Time [s]")\
-            .plot(ax=ax[i], xlim=[0, 40], ylim=[0, 1], legend=False)
-        ax[i].set_xlabel(None)
-        ax[i].tick_params(bottom=False, labelbottom=False)
-        ax[i].legend(loc=1)
-    fig.tight_layout()
-    plt.show()
 
 def resample(df: pd.DataFrame, column: str) -> tuple[np.ndarray, np.ndarray]:
     """サンプリングを行います
@@ -343,6 +307,7 @@ def resample(df: pd.DataFrame, column: str) -> tuple[np.ndarray, np.ndarray]:
     y = f(ft)
     return (ft, y)
 
+
 def pre_processing(df: pd.DataFrame, n_session: int, verbose: bool = False):
     """
     被験者のセッションについて前処理
@@ -355,8 +320,9 @@ def pre_processing(df: pd.DataFrame, n_session: int, verbose: bool = False):
     n_session : int
         セッション番号
     """
-    df_psed = pd.concat([prep(df.loc[:, col], verbose=verbose) for col in df], axis=1)    
-    
+    df_psed = pd.concat([prep(df.loc[:, col], verbose=verbose)
+                        for col in df], axis=1)
+
     # >>> リサンプリング
     muscles: list[np.ndarray] = [None for _ in df_psed.columns]
     for i, column in enumerate(df_psed.columns):
@@ -364,7 +330,11 @@ def pre_processing(df: pd.DataFrame, n_session: int, verbose: bool = False):
         muscles[i] = x
     muscles: np.ndarray = np.array(muscles).T
     df_psed: pd.DataFrame \
-        = pd.DataFrame(muscles, columns=df.columns, index=pd.to_timedelta(t, unit="s")) # pd.Series(t, name="Time [s]"))
+        = pd.DataFrame(
+            muscles,
+            columns=df.columns,
+            index=pd.to_timedelta(t, unit="s")
+        )  # pd.Series(t, name="Time [s]"))
     # <<<
 
     df_psed["Session"] = n_session
@@ -373,7 +343,11 @@ def pre_processing(df: pd.DataFrame, n_session: int, verbose: bool = False):
     df_psed.set_index(["Session", "Task", "index"], inplace=True)
     return df_psed
 
-def pre_processing_all(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+
+def pre_processing_all(
+    df: pd.DataFrame,
+    verbose: bool = False
+) -> pd.DataFrame:
     """
     被験者のすべてのセッションにおけるデータの前処理
 
@@ -392,8 +366,13 @@ def pre_processing_all(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     sessions_df: list[pd.DataFrame] = [None for _ in sessions]
     for i, n_session in enumerate(sessions):
         sessions_df[i] \
-            = pre_processing(get_session(df, n_session), n_session, verbose=verbose)
+            = pre_processing(
+                get_session(df, n_session),
+                n_session,
+                verbose=verbose
+            )
     sessions_df: pd.DataFrame = pd.concat(sessions_df)
     # sessions_df[:] = (df - df.min()) / (df.max() - df.min())
-    sessions_df = sessions_df.subtract(sessions_df.min(axis=0), axis=1).divide(sessions_df.max(axis=0) - sessions_df.min(axis=0), axis=1)
+    sessions_df = sessions_df.subtract(sessions_df.min(axis=0), axis=1).divide(
+        sessions_df.max(axis=0) - sessions_df.min(axis=0), axis=1)
     return sessions_df
