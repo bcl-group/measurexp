@@ -1,5 +1,5 @@
 # measurexp
-[![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
+[![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg?branch=dev)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
 
 データ解析ライブラリ
 
