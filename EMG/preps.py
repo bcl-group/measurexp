@@ -9,11 +9,11 @@ import re
 # import glob
 from scipy import interpolate
 from cupyx.scipy import ndimage as cndimage
-import plotly.io as pio
+# import plotly.io as pio
 
-pio.renderers.default = "notebook_connected"
+# pio.renderers.default = "notebook_connected"
 # pd.options.plotting.backend = "plotly"
-pd.options.plotting.backend = "matplotlib"
+# pd.options.plotting.backend = "matplotlib"
 
 plt.rcParams["font.family"] = "IBM Plex Sans JP"
 

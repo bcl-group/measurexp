@@ -1,3 +1,5 @@
+# 筋活動や筋シナジーのプロットを行う。
+
 from typing import Union
 import pandas as pd
 import matplotlib.pyplot as plt

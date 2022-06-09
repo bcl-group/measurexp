@@ -6,23 +6,26 @@ authors = ["MURATA Mitsuharu <hikari.photon+dev@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
-pandas = "^1.4.1"
-scipy = "^1.8.0"
-matplotlib = "^3.5.1"
+python = "^3.9"
+pandas = "^1.4.2"
+matplotlib = "^3.5.2"
 tensorly = "^0.7.0"
 sklearn = "^0.0"
-loguru = "^0.6.0"
-SQLAlchemy = "^1.4.36"
 notebook = "^6.4.11"
 ipykernel = "^6.13.0"
-dask = "^2022.5.0"
-distributed = "^2022.5.0"
-cupy-cuda116 = "^10.4.0"
-plotly = "^5.8.0"
 statsmodels = "^0.13.2"
-dtw-python = "^1.1.12"
-torch = {url = "https://download.pytorch.org/whl/cu115/torch-1.11.0%2Bcu115-cp39-cp39-win_amd64.whl"}
+
+# loguru = "^0.6.0"
+# SQLAlchemy = "^1.4.36"
+# dask = "^2022.5.0"
+# distributed = "^2022.5.0"
+# cupy-cuda116 = "^10.4.0"
+# plotly = "^5.8.0"
+# dtw-python = "^1.1.12"
+# torch = {url = "https://download.pytorch.org/whl/cu115/torch-1.11.0%2Bcu115-cp39-cp39-win_amd64.whl"}
+torch = {path = "torch-1.11.0+cu115-cp39-cp39-win_amd64.whl"}
+cupy-cuda116 = "^10.5.0"
+graphviz = "^0.20"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"

@@ -165,3 +165,4 @@ test.py
 _*
 !notes/*.ipynb
 *.pickle
+*.whl

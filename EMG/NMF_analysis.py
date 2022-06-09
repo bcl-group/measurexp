@@ -30,9 +30,9 @@ def VAF(
     return vaf
 
 
-def getVAF(participant: str, plot: bool = False):
-    files: list[str] = glob.glob(f"data/{participant}-session*-NMF.pickle")
-    df_P = pd.read_pickle(f"data/{participant}.pickle")
+def getVAF(participant: str, dir: str = 'data', plot: bool = False):
+    files: list[str] = glob.glob(f"{dir}/{participant}-session*-NMF.pickle")
+    df_P = pd.read_pickle(f"{dir}/{participant}.pickle")
     VAFs: list[pd.DataFrame] = [None for _ in files]
     sessions: list[int] = [None for _ in files]
     for i, file in enumerate(files):
