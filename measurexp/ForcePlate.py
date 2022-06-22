@@ -2,7 +2,6 @@
 import pandas as pd
 from scipy import signal
 import matplotlib.pyplot as plt
-plt.rcParams["font.family"] = "IPAexGothic"
 
 
 class ForcePlate:

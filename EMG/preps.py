@@ -15,7 +15,6 @@ from cupyx.scipy import ndimage as cndimage
 # pd.options.plotting.backend = "plotly"
 # pd.options.plotting.backend = "matplotlib"
 
-plt.rcParams["font.family"] = "IBM Plex Sans JP"
 
 
 def get_condition_name(filename: str) -> str:
