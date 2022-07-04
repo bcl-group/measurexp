@@ -1,8 +1,7 @@
 # import numpy as np
 import pandas as pd
 from scipy import signal
-import matplotlib.pyplot as plt
-plt.rcParams["font.family"] = "IPAexGothic"
+# import matplotlib.pyplot as plt
 
 
 class ForcePlate:

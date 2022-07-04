@@ -171,7 +171,9 @@ class IdEMG:
                     logger.info('全データの読み込み完了しました。')
 
             # 正規化
-            max_muscles = np.array([_.rms.max().to_numpy() for _ in self.emgs]).max(axis=0)
+            max_muscles \
+                = np.array([_.rms.max().to_numpy() for _ in self.emgs])\
+                    .max(axis=0)
             for _ in self.emgs:
                 _.rms[:] = _.rms / max_muscles
 
