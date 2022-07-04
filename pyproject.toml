@@ -14,16 +14,7 @@ sklearn = "^0.0"
 notebook = "^6.4.11"
 ipykernel = "^6.13.0"
 statsmodels = "^0.13.2"
-
-# loguru = "^0.6.0"
-# SQLAlchemy = "^1.4.36"
-# dask = "^2022.5.0"
-# distributed = "^2022.5.0"
-# cupy-cuda116 = "^10.4.0"
-# plotly = "^5.8.0"
-# dtw-python = "^1.1.12"
-# torch = {url = "https://download.pytorch.org/whl/cu115/torch-1.11.0%2Bcu115-cp39-cp39-win_amd64.whl"}
-torch = {path = "torch-1.11.0+cu115-cp39-cp39-win_amd64.whl"}
+torch = {path = "torch-1.12.0+cu102-cp39-cp39-linux_x86_64.whl"}
 cupy-cuda116 = "^10.5.0"
 graphviz = "^0.20"
 
