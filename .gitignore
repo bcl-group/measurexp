@@ -166,3 +166,5 @@ _*
 !notes/*.ipynb
 *.pickle
 *.whl
+
+torch*.whl

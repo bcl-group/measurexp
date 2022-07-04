@@ -159,6 +159,7 @@ def HW(
     )
     W(df, ylim_max=0.5)
 
+
 def HW_with_heatmap(
     participant: str = 'A',
     n_session: int = 4,
@@ -168,7 +169,9 @@ def HW_with_heatmap(
 ):
     df_P = pd.read_pickle(f"{experiments_dir}/{participant}.pickle")
     session: pd.DataFrame = df_P.loc[n_session, :, :]
-    ntf_data = pd.read_pickle(f'{experiments_dir}/{participant}-session{n_session:02d}-NMF.pickle')
+    ntf_data = pd.read_pickle(
+        f'{experiments_dir}/{participant}-session{n_session:02d}-NMF.pickle'
+    )
 
     X = session.to_numpy().T
     X = X / X.max() * 255
@@ -186,18 +189,23 @@ def HW_with_heatmap(
 
     ax = fig.add_subplot(gs[1:, 1:])
     bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    img = img.resize((int(bbox.width * fig.dpi), int(bbox.height * fig.dpi)), resample=Image.Resampling.NEAREST)
+    img = img.resize(
+        (int(bbox.width * fig.dpi), int(bbox.height * fig.dpi)),
+        resample=Image.Resampling.NEAREST
+    )
     ax.set_xlabel("時刻 [s]")
     ax.set_yticks([])
-    # ax.set_yticks(np.linspace(int(bbox.height * fig.dpi) / 32, int(bbox.height * fig.dpi) - int(bbox.height * fig.dpi) / 32, 16))
-    # ax.set_xticks(np.arange(0, img.size[0] + 1, int(img.size[0] / 8)))
     ax.set_xticks(np.linspace(0, img.size[0], 9))
     ax.set_xticklabels(np.linspace(0, 40, 9, dtype=int))
     ax.imshow(img, cmap='jet')
     # ax.set_yticklabels([''] * 16)
 
     H = ntf_data[n_synergy - 1][1][1].cpu().numpy()
-    H = pd.DataFrame(H, columns=[f"筋シナジー {_+1}" for _ in range(H.shape[1])], index=muscle_names)
+    H = pd.DataFrame(
+        H,
+        columns=[f"筋シナジー {_+1}" for _ in range(H.shape[1])],
+        index=muscle_names
+    )
     H[::-1].plot(kind="barh", ax=axH, legend=False)
     # axH.grid(lw=.5, ls='--')
     axH.set_axisbelow(True)

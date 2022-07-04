@@ -16,7 +16,6 @@ from cupyx.scipy import ndimage as cndimage
 # pd.options.plotting.backend = "matplotlib"
 
 
-
 def get_condition_name(filename: str) -> str:
     """
     ファイル名からタスク名を取得します。
