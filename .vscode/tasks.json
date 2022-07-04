@@ -4,9 +4,15 @@
     "version": "2.0.0",
     "tasks": [
         {
+<<<<<<< HEAD
             "label": "echo",
             "type": "shell",
             "command": "echo Hello"
+=======
+            "label": "code review",
+            "type": "shell",
+            "command": "python -m poetry run flake8 EMG/ measurexp/"
+>>>>>>> dev
         }
     ]
 }

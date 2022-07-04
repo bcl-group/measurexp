@@ -7,7 +7,10 @@ from scipy import signal
 from scipy import ndimage
 from sklearn import decomposition
 import matplotlib.pyplot as plt
+<<<<<<< HEAD
 plt.rcParams["font.family"] = "IPAexGothic"
+=======
+>>>>>>> dev
 
 
 class EMG:
@@ -139,7 +142,16 @@ class EMG:
         self.taskname = taskname
         return self
 
+<<<<<<< HEAD
     def prep(self, period: float = 0.2, n: int = 5, Fc: np.ndarray = np.array([5, 500])) -> 'EMG':
+=======
+    def prep(
+        self,
+        period: float = 0.2,
+        n: int = 5,
+        Fc: np.ndarray = np.array([5, 500])
+    ) -> 'EMG':
+>>>>>>> dev
         """データの下処理を行います。
 
         Parameters
@@ -160,7 +172,11 @@ class EMG:
         # b, a = signal.butter(n, Fc / self.fs * 2, 'band', analog=True)
         x = self.data.loc[self.begin_time:self.end_time, :].copy()
         # for m in range(x.shape[1]):
+<<<<<<< HEAD
             # x.iloc[:, m] = signal.filtfilt(b, a, x.iloc[:, m])
+=======
+        # x.iloc[:, m] = signal.filtfilt(b, a, x.iloc[:, m])
+>>>>>>> dev
 
         x[:] = np.power(x - x.mean(), 2)
         for _ in x:

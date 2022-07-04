@@ -163,3 +163,11 @@ test.py
 .jupyter
 .config
 _*
+<<<<<<< HEAD
+=======
+!notes/*.ipynb
+*.pickle
+*.whl
+
+torch*.whl
+>>>>>>> dev

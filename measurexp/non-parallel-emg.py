@@ -4,7 +4,11 @@
 from measurexp import EMG
 import importlib
 importlib.reload(EMG)
+<<<<<<< HEAD
 import pandas as pd
+=======
+# import pandas as pd
+>>>>>>> dev
 # from multiprocessing import Pool
 # import glob
 
@@ -15,4 +19,7 @@ if __name__ == '__main__':
     emg.read(file)
     emg.set_time(0, 40)
     emg.prep()
+<<<<<<< HEAD
 
+=======
+>>>>>>> dev

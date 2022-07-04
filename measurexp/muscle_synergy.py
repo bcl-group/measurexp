@@ -1,6 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+<<<<<<< HEAD
 plt.rcParams["font.family"] = "IPAexGothic"
+=======
+>>>>>>> dev
 
 
 class MuscleSynergy:

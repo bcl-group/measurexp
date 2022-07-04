@@ -1,19 +1,37 @@
+<<<<<<< HEAD
 from measurexp import EMG
 import importlib
 importlib.reload(EMG)
+=======
+>>>>>>> dev
 import pandas as pd
 from multiprocessing import Pool
 import glob
 
+<<<<<<< HEAD
+=======
+from measurexp import EMG
+import importlib
+importlib.reload(EMG)
+
+
+>>>>>>> dev
 def prepMultiEMG(file: str):
     return EMG.EMG() \
         .read(file) \
         .set_time(0, 40) \
         .prep()
 
+<<<<<<< HEAD
 def getEMGs(dir, muscles):
     EMGs: list[EMG.EMG]
     
+=======
+
+def getEMGs(dir, muscles):
+    EMGs: list[EMG.EMG]
+
+>>>>>>> dev
     with Pool(8) as p:
         files = glob.glob(f"{dir}/EMG-*.csv")
         EMGs = p.map(prepMultiEMG, files)
@@ -23,7 +41,11 @@ def getEMGs(dir, muscles):
         EMGs[i].data = tmp1.loc[:, muscles]
         EMGs[i].rms = tmp2.loc[:, muscles]
         del tmp1, tmp2
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> dev
     EMG_maxs = list(range(len(EMGs)))
     EMG_mins = list(range(len(EMGs)))
     for i, _ in enumerate(EMGs):
@@ -36,7 +58,17 @@ def getEMGs(dir, muscles):
     return EMGs
 
 
+<<<<<<< HEAD
 def get_EMGs(participants_dir: str, muscles_file: str = "muscles_list.csv") -> list[EMG.EMG]:
     muscles: list[str] = pd.read_csv(muscles_file, header=None).to_numpy()[:,-1].tolist()
     EMGs: list[EMG.EMG] = getEMGs(participants_dir, muscles)
     return EMGs
+=======
+def get_EMGs(participants_dir: str,
+             muscles_file: str = "muscles_list.csv"
+             ) -> list[EMG.EMG]:
+    muscles: list[str] = pd.read_csv(muscles_file, header=None).to_numpy()[
+        :, -1].tolist()
+    EMGs: list[EMG.EMG] = getEMGs(participants_dir, muscles)
+    return EMGs
+>>>>>>> dev
