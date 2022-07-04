@@ -5,7 +5,7 @@
 
 ## 動作環境
 - Windows and Ubuntu (WSL も可)
-- Python 3.9 系 (3.9.13)
+- Python 3.9 系 (3.9.12)
 
 - [筋電筋解析](EMG.md)
 - [筋シナジー解析](muscle_synergy.md)
@@ -25,7 +25,7 @@
 
 
 ```bash
-python -V # 3.9.13 を確認
+python -V # 3.9.12 を確認
 python -m pip install -U pip setuptools wheel poetry
 
 cuda_version=$(nvidia-smi | grep "CUDA V" | sed -e s/.*CUDA\ Version:\ //g | sed -e s/[^0-9.]//g)
