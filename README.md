@@ -1,10 +1,10 @@
 # measurexp
-[![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg?branch=master)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
+[![flake8](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml/badge.svg?branch=dev)](https://github.com/bcl-group/measurexp/actions/workflows/flake8.yml)
 
 データ解析ライブラリ
 
 ## 動作環境
-- Windows only
+- Windows and Ubuntu
 - Python 3.9.12
 - visual-cpp-build-tools をインストール (https://visualstudio.microsoft.com/visual-cpp-build-tools/)
 
