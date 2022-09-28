@@ -221,3 +221,10 @@ def HW_with_heatmap(
     axW.set_xlim([0, W.shape[0]])
     axW.set_ylabel("活動度")
     plt.show()
+
+
+def muscles_combination(filename: str):
+    muscles: list = None
+    with open(filename) as f:
+        muscles = list(map(lambda x: x.strip().split(" "), f.readlines()))
+    return muscles
